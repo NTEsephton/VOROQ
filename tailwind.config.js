@@ -1,20 +1,21 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       colors: {
-        primary: '#111111',
-        'primary-dark': '#000000',
-        'primary-light': '#5C5C58',
-        accent: '#FFFFFF',
-        'accent-dark': '#D8D8D3',
-        background: '#FDFDFC',
-        surface: '#FFFFFF',
-        ink: '#111111',
-        muted: '#6E6E6B',
-        divider: '#E4E4DF',
-        deep: '#0B7C9E',
+        primary: '#1F51FF',
+        'primary-dark': '#1F51FF',
+        'primary-light': '#7C93FF',
+        accent: '#EDEEEA',
+        'accent-dark': '#3A3C38',
+        background: '#0A0A0C',
+        surface: '#141519',
+        ink: '#F3F4F1',
+        muted: '#8F938E',
+        divider: '#26282B',
+        deep: '#0A0D18',
       },
       fontFamily: {
         display: ['"Jost"', 'system-ui', 'sans-serif'],

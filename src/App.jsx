@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import {
-  Phone,
   Mail,
   MapPin,
   ArrowUpRight,
@@ -22,7 +21,10 @@ import {
   ShoppingCart,
   PenTool,
   LifeBuoy,
+  Sun,
+  Moon,
 } from 'lucide-react'
+import { useTheme } from './ThemeContext.jsx'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -73,6 +75,30 @@ const SERVICES_FULL = [
 /* ----------------------------------------------------------------
    Navbar
 ---------------------------------------------------------------- */
+function ThemeToggle({ className = '' }) {
+  const { theme, toggleTheme } = useTheme()
+  const isDark = theme === 'dark'
+  return (
+    <button
+      type="button"
+      onClick={toggleTheme}
+      aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+      aria-pressed={isDark}
+      className={`relative inline-flex items-center h-8 w-[60px] shrink-0 rounded-full bg-white/10 border border-white/20 backdrop-blur-md px-1 transition-colors duration-300 ${className}`}
+    >
+      <Sun className="absolute left-[7px] h-3.5 w-3.5 text-white/50 pointer-events-none" />
+      <Moon className="absolute right-[7px] h-3.5 w-3.5 text-white/50 pointer-events-none" />
+      <span
+        className={`relative h-6 w-6 rounded-full bg-primary shadow-md flex items-center justify-center transition-transform duration-300 ease-out ${
+          isDark ? 'translate-x-[28px]' : 'translate-x-0'
+        }`}
+      >
+        {isDark ? <Moon className="h-3.5 w-3.5 text-white" /> : <Sun className="h-3.5 w-3.5 text-white" />}
+      </span>
+    </button>
+  )
+}
+
 function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
@@ -96,39 +122,43 @@ function Navbar() {
               src="/logo-black.svg"
               alt="VOROQ"
               className="h-32 sm:h-40 w-auto transition-all duration-500"
-              style={{ filter: scrolled ? 'none' : 'brightness(0) invert(1)' }}
+              style={{ filter: 'brightness(0) invert(1)' }}
             />
           </a>
 
-          <div className="hidden lg:flex items-center gap-7">
+          <div className="hidden lg:flex items-center gap-2 shrink min-w-0">
             {NAV_LINKS.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
-                className={`text-sm font-medium tracking-tight lift-on-hover ${
-                  scrolled ? 'text-ink/70 hover:text-primary' : 'text-white/90 hover:text-white'
-                } transition-colors`}
+                className={`text-sm font-medium tracking-tight lift-on-hover px-3 py-1.5 rounded-full whitespace-nowrap transition-colors duration-300 hover:bg-primary hover:text-white ${
+                  scrolled ? 'text-ink/70' : 'text-white/85'
+                }`}
               >
                 {link.label}
               </a>
             ))}
           </div>
 
-          <a
-            href="#contact"
-            className="hidden lg:inline-flex magnetic-btn items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg shadow-primary/30"
-          >
-            Start a project
-            <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} />
-          </a>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
 
-          <button
-            onClick={() => setOpen(true)}
-            className={`lg:hidden p-2 rounded-full ${scrolled ? 'text-ink' : 'text-white'}`}
-            aria-label="Open menu"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
+            <a
+              href="#contact"
+              className="hidden lg:inline-flex magnetic-btn items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg shadow-primary/30 shrink-0 whitespace-nowrap"
+            >
+              Start a project
+              <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} />
+            </a>
+
+            <button
+              onClick={() => setOpen(true)}
+              className={`lg:hidden p-2 rounded-full ${scrolled ? 'text-ink' : 'text-white'}`}
+              aria-label="Open menu"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -145,10 +175,13 @@ function Navbar() {
           }`}
         >
           <div className="flex items-center justify-between mb-10">
-            <img src="/logo-black.svg" alt="VOROQ" className="h-11 w-auto" />
-            <button onClick={() => setOpen(false)} className="p-2 rounded-full bg-divider/40">
-              <X className="h-5 w-5" />
-            </button>
+            <img src="/logo-black.svg" alt="VOROQ" className="h-11 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
+            <div className="flex items-center gap-3">
+              <ThemeToggle />
+              <button onClick={() => setOpen(false)} className="p-2 rounded-full bg-divider/40">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
           </div>
           <div className="flex flex-col gap-1">
             {NAV_LINKS.map((link) => (
@@ -156,7 +189,7 @@ function Navbar() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setOpen(false)}
-                className="font-display text-3xl font-semibold text-ink py-3 border-b border-divider"
+                className="font-display text-3xl font-semibold text-ink py-3 px-4 rounded-2xl border-b border-divider transition-colors duration-300 hover:bg-primary hover:text-white"
               >
                 {link.label}
               </a>
@@ -177,10 +210,113 @@ function Navbar() {
 }
 
 /* ----------------------------------------------------------------
+   Custom Cursor + Magnetic Buttons
+---------------------------------------------------------------- */
+function CustomCursor() {
+  const dotRef = useRef(null)
+  const ringRef = useRef(null)
+  const [enabled] = useState(() => window.matchMedia('(hover: hover) and (pointer: fine)').matches)
+
+  useEffect(() => {
+    if (!enabled) return
+    const dot = dotRef.current
+    const ring = ringRef.current
+    if (!dot || !ring) return
+
+    const dotX = gsap.quickTo(dot, 'x', { duration: 0.15, ease: 'power3.out' })
+    const dotY = gsap.quickTo(dot, 'y', { duration: 0.15, ease: 'power3.out' })
+    const ringX = gsap.quickTo(ring, 'x', { duration: 0.5, ease: 'power3.out' })
+    const ringY = gsap.quickTo(ring, 'y', { duration: 0.5, ease: 'power3.out' })
+
+    const onMove = (e) => {
+      dotX(e.clientX)
+      dotY(e.clientY)
+      ringX(e.clientX)
+      ringY(e.clientY)
+    }
+    const onDown = () => gsap.to([dot, ring], { scale: 0.7, duration: 0.25, ease: 'power2.out' })
+    const onUp = () => gsap.to([dot, ring], { scale: 1, duration: 0.25, ease: 'power2.out' })
+    const onEnterInteractive = () => {
+      gsap.to(ring, { scale: 1.8, opacity: 0.4, duration: 0.35, ease: 'power2.out' })
+      gsap.to(dot, { scale: 0, duration: 0.25, ease: 'power2.out' })
+    }
+    const onLeaveInteractive = () => {
+      gsap.to(ring, { scale: 1, opacity: 1, duration: 0.35, ease: 'power2.out' })
+      gsap.to(dot, { scale: 1, duration: 0.25, ease: 'power2.out' })
+    }
+    const onWindowLeave = () => gsap.to([dot, ring], { opacity: 0, duration: 0.3 })
+    const onWindowEnter = () => gsap.to([dot, ring], { opacity: 1, duration: 0.3 })
+
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mousedown', onDown)
+    window.addEventListener('mouseup', onUp)
+    document.addEventListener('mouseleave', onWindowLeave)
+    document.addEventListener('mouseenter', onWindowEnter)
+
+    const interactiveEls = document.querySelectorAll(
+      'a, button, input, textarea, select, .magnetic-btn, [data-cursor-hover]'
+    )
+    interactiveEls.forEach((el) => {
+      el.addEventListener('mouseenter', onEnterInteractive)
+      el.addEventListener('mouseleave', onLeaveInteractive)
+    })
+
+    // Magnetic pull for buttons tagged .magnetic-btn
+    const magneticEls = document.querySelectorAll('.magnetic-btn')
+    const magneticCleanups = []
+    magneticEls.forEach((el) => {
+      const xTo = gsap.quickTo(el, 'x', { duration: 0.4, ease: 'power3.out' })
+      const yTo = gsap.quickTo(el, 'y', { duration: 0.4, ease: 'power3.out' })
+      const onElMove = (e) => {
+        const rect = el.getBoundingClientRect()
+        xTo((e.clientX - (rect.left + rect.width / 2)) * 0.35)
+        yTo((e.clientY - (rect.top + rect.height / 2)) * 0.35)
+      }
+      const onElLeave = () => {
+        xTo(0)
+        yTo(0)
+      }
+      el.addEventListener('mousemove', onElMove)
+      el.addEventListener('mouseleave', onElLeave)
+      magneticCleanups.push(() => {
+        el.removeEventListener('mousemove', onElMove)
+        el.removeEventListener('mouseleave', onElLeave)
+      })
+    })
+
+    return () => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mousedown', onDown)
+      window.removeEventListener('mouseup', onUp)
+      document.removeEventListener('mouseleave', onWindowLeave)
+      document.removeEventListener('mouseenter', onWindowEnter)
+      interactiveEls.forEach((el) => {
+        el.removeEventListener('mouseenter', onEnterInteractive)
+        el.removeEventListener('mouseleave', onLeaveInteractive)
+      })
+      magneticCleanups.forEach((fn) => fn())
+    }
+  }, [enabled])
+
+  if (!enabled) return null
+
+  return (
+    <>
+      <div ref={ringRef} className="cursor-ring" />
+      <div ref={dotRef} className="cursor-dot" />
+    </>
+  )
+}
+
+/* ----------------------------------------------------------------
    Hero
 ---------------------------------------------------------------- */
 function Hero() {
   const heroRef = useRef(null)
+  const spotlightRef = useRef(null)
+  const textRef = useRef(null)
+  const particlesRef = useRef(null)
+  const logoSpinRef = useRef(null)
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -198,20 +334,104 @@ function Hero() {
     return () => ctx.revert()
   }, [])
 
+  // VOROQ wordmark arrives from a distance, approaching the camera
+  useEffect(() => {
+    if (!logoSpinRef.current) return
+    gsap.set(logoSpinRef.current, {
+      rotateX: 8,
+      transformPerspective: 900,
+      scale: 0.35,
+      z: -900,
+      filter: 'blur(5px)',
+    })
+    const tween = gsap.to(logoSpinRef.current, {
+      scale: 1,
+      z: 0,
+      filter: 'blur(0px)',
+      duration: 1.4,
+      delay: 0.6,
+      ease: 'power2.out',
+    })
+    return () => tween.kill()
+  }, [])
+
+  // Mouse-reactive spotlight glow + parallax depth
+  useEffect(() => {
+    const isFinePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches
+    const hero = heroRef.current
+    const spotlight = spotlightRef.current
+    if (!isFinePointer || !hero || !spotlight || !textRef.current || !particlesRef.current) return
+
+    const spotX = gsap.quickTo(spotlight, 'x', { duration: 0.7, ease: 'power3.out' })
+    const spotY = gsap.quickTo(spotlight, 'y', { duration: 0.7, ease: 'power3.out' })
+    const textX = gsap.quickTo(textRef.current, 'x', { duration: 1, ease: 'power3.out' })
+    const textY = gsap.quickTo(textRef.current, 'y', { duration: 1, ease: 'power3.out' })
+    const particlesX = gsap.quickTo(particlesRef.current, 'x', { duration: 0.8, ease: 'power3.out' })
+    const particlesY = gsap.quickTo(particlesRef.current, 'y', { duration: 0.8, ease: 'power3.out' })
+
+    let started = false
+
+    const onMove = (e) => {
+      const rect = hero.getBoundingClientRect()
+      const localX = e.clientX - rect.left
+      const localY = e.clientY - rect.top
+      const offsetX = (localX / rect.width - 0.5) * 2
+      const offsetY = (localY / rect.height - 0.5) * 2
+
+      spotX(localX)
+      spotY(localY)
+      textX(offsetX * -12)
+      textY(offsetY * -8)
+      particlesX(offsetX * 28)
+      particlesY(offsetY * 18)
+
+      if (!started) {
+        started = true
+        gsap.to(spotlight, { opacity: 1, duration: 0.8, ease: 'power2.out' })
+      }
+    }
+    const onLeave = () => gsap.to(spotlight, { opacity: 0, duration: 0.6, ease: 'power2.out' })
+
+    hero.addEventListener('mousemove', onMove)
+    hero.addEventListener('mouseleave', onLeave)
+    return () => {
+      hero.removeEventListener('mousemove', onMove)
+      hero.removeEventListener('mouseleave', onLeave)
+    }
+  }, [])
+
   return (
     <section id="home" ref={heroRef} className="relative min-h-[100dvh] w-full overflow-hidden">
       <div className="absolute inset-0">
-        <img
-          src="https://images.unsplash.com/photo-1550684376-efcbd6e3f031?auto=format&fit=crop&w=2400&q=80"
-          alt="Textured black surface"
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
           className="w-full h-full object-cover"
-        />
+        >
+          <source src="/hero-bg.mp4" type="video/mp4" />
+        </video>
         <div className="absolute inset-0 bg-gradient-to-tr from-deep/85 via-deep/55 to-deep/20" />
         <div className="absolute inset-0 bg-gradient-to-t from-deep via-deep/30 to-transparent" />
       </div>
 
+      {/* Mouse-follow spotlight */}
+      <div
+        ref={spotlightRef}
+        className="absolute top-0 left-0 h-[560px] w-[560px] rounded-full opacity-0"
+        style={{
+          background:
+            'radial-gradient(circle, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.07) 40%, transparent 70%)',
+          marginLeft: '-280px',
+          marginTop: '-280px',
+          mixBlendMode: 'screen',
+          filter: 'blur(10px)',
+        }}
+      />
+
       {/* Decorative floating particles */}
-      <div className="absolute inset-0 pointer-events-none">
+      <div ref={particlesRef} className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 right-[18%] h-2 w-2 rounded-full bg-primary-light/70 animate-float" style={{ animationDelay: '0s' }} />
         <div className="absolute top-[55%] right-[10%] h-1.5 w-1.5 rounded-full bg-accent/60 animate-float" style={{ animationDelay: '1.5s' }} />
         <div className="absolute top-[40%] right-[26%] h-1 w-1 rounded-full bg-white/50 animate-float" style={{ animationDelay: '3s' }} />
@@ -220,8 +440,44 @@ function Hero() {
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
       <div className="relative z-10 flex min-h-[100dvh] flex-col items-center justify-center text-center">
-        <div className="px-6 sm:px-10 lg:px-16 max-w-4xl">
-          <p className="hero-meta font-mono text-xs uppercase tracking-[0.3em] text-white/60 mb-6">
+        <div ref={textRef} className="px-6 sm:px-10 lg:px-16 max-w-4xl">
+          <div className="hero-meta relative mb-10 flex justify-center animate-float">
+            <div style={{ perspective: '900px' }}>
+              <div
+                ref={logoSpinRef}
+                className="relative"
+                style={{ transformStyle: 'preserve-3d' }}
+              >
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <span
+                    key={i}
+                    aria-hidden={i !== 0}
+                    className="absolute inset-0 flex items-center justify-center font-display font-light uppercase tracking-[0.35em] text-4xl sm:text-5xl md:text-6xl select-none"
+                    style={{
+                      transform: `translateZ(${-i * 2.2}px)`,
+                      opacity: i === 0 ? 1 : Math.max(0.15, 1 - i * 0.1),
+                      color: i === 0 ? '#FFFFFF' : '#1F51FF',
+                      textShadow:
+                        i === 0
+                          ? '0 0 4px rgba(255,255,255,0.95), 0 0 16px rgba(31,81,255,0.85), 0 0 40px rgba(31,81,255,0.5)'
+                          : 'none',
+                    }}
+                  >
+                    VOROQ
+                  </span>
+                ))}
+                <span className="invisible block font-display font-light uppercase tracking-[0.35em] text-4xl sm:text-5xl md:text-6xl px-2">
+                  VOROQ
+                </span>
+              </div>
+            </div>
+            <div
+              className="absolute left-1/2 -translate-x-1/2 mt-2 h-4 w-40 rounded-full bg-black/40 blur-xl"
+              style={{ top: '100%' }}
+            />
+          </div>
+
+          <p className="hero-meta font-mono text-xs uppercase tracking-[0.3em] text-white mb-6">
             Website & Landing Page Studio
           </p>
           <h1 className="font-display font-extrabold text-white leading-[0.95] tracking-tight">
@@ -236,10 +492,10 @@ function Hero() {
             </span>
           </h1>
 
-          <p className="hero-meta mx-auto max-w-xl text-white/75 text-base sm:text-lg mt-8 leading-relaxed">
+          <p className="hero-meta mx-auto max-w-xl text-white text-base sm:text-lg mt-8 leading-relaxed">
             VOROQ designs and builds fast, modern websites and landing pages for businesses that
             want to look sharp online.
-            <span className="text-white"> Real pages, real content, no templates.</span>
+            <span className="text-white font-semibold"> Real pages, real content, no templates.</span>
           </p>
 
           <div className="hero-cta mt-10 flex flex-col sm:flex-row gap-4 justify-center">
@@ -251,11 +507,11 @@ function Hero() {
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </a>
             <a
-              href="tel:+15550100192"
+              href="mailto:VOROQ@voroq.co.uk"
               className="lift-on-hover inline-flex items-center justify-center gap-2 bg-white/10 backdrop-blur-md text-white border border-white/20 font-medium px-7 py-4 rounded-full"
             >
-              <Phone className="h-4 w-4" />
-              +1 (555) 010-0192
+              <Mail className="h-4 w-4" />
+              VOROQ@voroq.co.uk
             </a>
           </div>
         </div>
@@ -273,6 +529,7 @@ function Hero() {
    Feature Card 1 — Campaign Shuffler
 ---------------------------------------------------------------- */
 function CampaignShuffler() {
+  const { theme } = useTheme()
   const items = [
     { tag: 'Homepage', label: 'Hero + navigation layout', metric: 'v1 draft' },
     { tag: 'Landing Page', label: 'Above-the-fold concept', metric: 'v2 draft' },
@@ -305,15 +562,15 @@ function CampaignShuffler() {
               opacity: 1 - offset * 0.25,
               transition: 'transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.6s ease',
             }}
-            className="absolute inset-0 bg-white border border-divider rounded-3xl p-5 shadow-md"
+            className="absolute inset-0 bg-[#F6F7F9] dark:bg-[#1B1D22] border border-black/10 dark:border-white/10 rounded-3xl p-5 shadow-md"
           >
             <div className="flex items-center justify-between">
               <span className="font-mono text-[10px] uppercase tracking-widest text-primary-dark bg-primary/10 px-2 py-1 rounded-full">
                 {item.tag}
               </span>
-              <span className="font-mono text-xs text-muted">{item.metric}</span>
+              <span className="font-mono text-xs text-black/50 dark:text-white/50">{item.metric}</span>
             </div>
-            <div className="mt-4 font-display text-lg font-semibold text-ink leading-tight">
+            <div className="mt-4 font-display text-lg font-semibold text-black dark:text-white leading-tight">
               {item.label}
             </div>
             <div className="mt-3 flex items-center gap-1.5">
@@ -321,7 +578,7 @@ function CampaignShuffler() {
                 <span
                   key={idx}
                   className="h-1 w-1 rounded-full"
-                  style={{ background: idx < 24 - offset * 6 ? '#111111' : '#E4E4DF' }}
+                  style={{ background: idx < 24 - offset * 6 ? '#1F51FF' : theme === 'dark' ? '#33353B' : '#D9DBDF' }}
                 />
               ))}
             </div>
@@ -336,6 +593,8 @@ function CampaignShuffler() {
    Feature Card 2 — Lead Funnel (signature animation)
 ---------------------------------------------------------------- */
 function LeadFunnel() {
+  const { theme } = useTheme()
+  const inkLine = theme === 'dark' ? '#F3F4F1' : '#0A0A0C'
   const [statusIdx, setStatusIdx] = useState(0)
   const [count, setCount] = useState(7)
 
@@ -380,10 +639,15 @@ function LeadFunnel() {
   return (
     <div
       className="relative h-44 w-full rounded-3xl overflow-hidden border border-primary/15"
-      style={{ background: 'linear-gradient(180deg, #F6F6F4 0%, #E9E9E5 70%, #D8D8D3 100%)' }}
+      style={{
+        background:
+          theme === 'dark'
+            ? 'linear-gradient(180deg, #17181D 0%, #131419 70%, #0F1014 100%)'
+            : 'linear-gradient(180deg, #FFFFFF 0%, #F6F7F9 70%, #EEF0F3 100%)',
+      }}
     >
-      <div className="absolute -top-8 -left-6 h-20 w-32 rounded-full bg-white/60 blur-2xl" />
-      <div className="absolute top-2 right-10 h-14 w-24 rounded-full bg-white/50 blur-xl" />
+      <div className="absolute -top-8 -left-6 h-20 w-32 rounded-full bg-primary/10 blur-2xl" />
+      <div className="absolute top-2 right-10 h-14 w-24 rounded-full bg-primary/5 blur-xl" />
 
       {/* Header strip */}
       <div className="absolute top-3 left-4 right-4 flex items-center justify-between z-20">
@@ -394,19 +658,19 @@ function LeadFunnel() {
           </span>
         </div>
         <div className="flex items-baseline gap-1">
-          <span className="font-display font-bold text-sm text-ink tabular-nums">
+          <span className="font-display font-bold text-sm text-black dark:text-white tabular-nums">
             {String(count).padStart(2, '0')}
           </span>
-          <span className="font-mono text-[9px] uppercase tracking-widest text-muted">this week</span>
+          <span className="font-mono text-[9px] uppercase tracking-widest text-black/45 dark:text-white/45">this week</span>
         </div>
       </div>
 
       {/* Funnel mouth at top */}
       <svg className="absolute left-3 right-3 top-9 h-5" viewBox="0 0 400 20" preserveAspectRatio="none">
-        <polygon points="30,4 370,4 300,16 100,16" fill="#111111" fillOpacity="0.18" />
-        <line x1="30" y1="4" x2="370" y2="4" stroke="#111111" strokeOpacity="0.5" strokeWidth="2" />
+        <polygon points="30,4 370,4 300,16 100,16" fill={inkLine} fillOpacity="0.1" />
+        <line x1="30" y1="4" x2="370" y2="4" stroke={inkLine} strokeOpacity="0.35" strokeWidth="2" />
         {[100, 200, 300].map((x) => (
-          <circle key={x} cx={x} cy="4" r="2.4" fill="#111111" />
+          <circle key={x} cx={x} cy="4" r="2.4" fill={inkLine} fillOpacity="0.5" />
         ))}
       </svg>
 
@@ -421,15 +685,15 @@ function LeadFunnel() {
               width: `${d.size}px`,
               height: `${d.size}px`,
               animation: `rain-fall ${d.dur} cubic-bezier(0.55,0.05,0.7,0.45) ${d.delay} infinite`,
-              filter: 'drop-shadow(0 1px 2px rgba(17,17,17,0.25))',
+              filter: 'drop-shadow(0 1px 3px rgba(31,81,255,0.45))',
               transform: 'translateX(-50%)',
             }}
             viewBox="0 0 24 24"
           >
             <defs>
               <linearGradient id={`lead-${i}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#4A4A46" />
-                <stop offset="100%" stopColor="#111111" />
+                <stop offset="0%" stopColor="#7C93FF" />
+                <stop offset="100%" stopColor="#1F51FF" />
               </linearGradient>
             </defs>
             <circle cx="12" cy="12" r="9" fill={`url(#lead-${i})`} />
@@ -440,9 +704,9 @@ function LeadFunnel() {
 
       {/* Conversion baseline */}
       <svg className="absolute bottom-9 left-3 right-3 h-3" viewBox="0 0 200 12" preserveAspectRatio="none">
-        <line x1="0" y1="7" x2="200" y2="7" stroke="#111111" strokeOpacity="0.3" strokeWidth="1.2" />
+        <line x1="0" y1="7" x2="200" y2="7" stroke={inkLine} strokeOpacity="0.18" strokeWidth="1.2" />
         {[10, 30, 50, 70, 90, 110, 130, 150, 170, 190].map((x) => (
-          <line key={x} x1={x} y1="5" x2={x} y2="9" stroke="#111111" strokeOpacity="0.2" strokeWidth="1" />
+          <line key={x} x1={x} y1="5" x2={x} y2="9" stroke={inkLine} strokeOpacity="0.12" strokeWidth="1" />
         ))}
       </svg>
 
@@ -497,6 +761,7 @@ function LeadFunnel() {
    Feature Card 3 — Discovery Scheduler
 ---------------------------------------------------------------- */
 function DiscoveryScheduler() {
+  const { theme } = useTheme()
   const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
   const [step, setStep] = useState(0)
   const activeDay = 2
@@ -526,9 +791,9 @@ function DiscoveryScheduler() {
   })()
 
   return (
-    <div className="relative h-44 w-full bg-white border border-divider rounded-3xl p-5 overflow-hidden">
+    <div className="relative h-44 w-full bg-[#F6F7F9] dark:bg-[#1B1D22] border border-black/10 dark:border-white/10 rounded-3xl p-5 overflow-hidden">
       <div className="flex items-center justify-between mb-3">
-        <span className="font-mono text-[10px] uppercase tracking-widest text-muted">Week 14 · Apr</span>
+        <span className="font-mono text-[10px] uppercase tracking-widest text-black/50 dark:text-white/50">Week 14 · Apr</span>
         <span className="font-mono text-[10px] uppercase tracking-widest text-primary-dark bg-primary/10 px-2 py-0.5 rounded-full">
           Kickoff call
         </span>
@@ -541,10 +806,10 @@ function DiscoveryScheduler() {
             className={`flex flex-col items-center justify-center h-9 rounded-xl text-xs font-medium transition-all duration-300 ${
               step >= 3 && idx === activeDay
                 ? 'bg-primary text-white scale-110 shadow-lg shadow-primary/30'
-                : 'bg-background text-ink'
+                : 'bg-white dark:bg-white/5 text-black dark:text-white'
             }`}
           >
-            <span className="font-mono text-[9px] text-muted">{d}</span>
+            <span className="font-mono text-[9px] text-black/45 dark:text-white/45">{d}</span>
             <span className="font-display font-semibold text-sm">{idx + 7}</span>
           </div>
         ))}
@@ -552,7 +817,7 @@ function DiscoveryScheduler() {
 
       <button
         className={`w-full py-2.5 rounded-2xl font-medium text-xs transition-all duration-300 ${
-          step === 4 ? 'bg-primary text-white scale-[1.02] shadow-md shadow-primary/20' : 'bg-divider/40 text-muted'
+          step === 4 ? 'bg-primary text-white scale-[1.02] shadow-md shadow-primary/20' : 'bg-black/5 dark:bg-white/10 text-black/50 dark:text-white/50'
         }`}
       >
         {step >= 3 ? '✓ Call booked' : 'Pick a time'}
@@ -563,7 +828,13 @@ function DiscoveryScheduler() {
         style={{ left: `${cursorPos.x}px`, top: `${cursorPos.y}px`, opacity: cursorPos.opacity, transform: step === 3 ? 'scale(0.85)' : 'scale(1)' }}
       >
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-          <path d="M5 3L19 12L12 13L9 20L5 3Z" fill="#111111" stroke="white" strokeWidth="1.5" strokeLinejoin="round" />
+          <path
+            d="M5 3L19 12L12 13L9 20L5 3Z"
+            fill={theme === 'dark' ? '#F3F4F1' : '#0A0A0C'}
+            stroke={theme === 'dark' ? '#0A0A0C' : '#FFFFFF'}
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
         </svg>
       </div>
     </div>
@@ -623,13 +894,13 @@ function Features() {
   ]
 
   return (
-    <section id="services" ref={sectionRef} className="relative py-28 sm:py-40 px-6 sm:px-10 lg:px-16">
+    <section id="services" ref={sectionRef} className="relative bg-white dark:bg-background py-28 sm:py-40 px-6 sm:px-10 lg:px-16">
       <div className="max-w-7xl mx-auto">
         <div className="feature-heading max-w-3xl mb-16 sm:mb-24">
           <span className="font-mono text-xs uppercase tracking-[0.25em] text-primary-dark">
             ╱ How we build
           </span>
-          <h2 className="font-display font-extrabold text-4xl sm:text-5xl md:text-6xl text-ink mt-4 leading-[1.05] tracking-tight">
+          <h2 className="font-display font-extrabold text-4xl sm:text-5xl md:text-6xl text-black dark:text-ink mt-4 leading-[1.05] tracking-tight">
             From idea
             <span className="block font-serif italic font-medium text-primary-dark mt-1">to live site.</span>
           </h2>
@@ -639,12 +910,12 @@ function Features() {
           {cards.map((card, idx) => (
             <article
               key={idx}
-              className="feature-card group relative bg-surface border border-divider rounded-5xl p-7 hover:border-primary/40 transition-colors duration-500 shadow-sm hover:shadow-xl hover:shadow-primary/10"
+              className="feature-card group relative bg-white dark:bg-surface border border-black/10 dark:border-divider rounded-5xl p-7 hover:border-primary/40 transition-colors duration-500 shadow-sm hover:shadow-xl hover:shadow-primary/10"
             >
               <div className="flex items-center justify-between mb-6">
-                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted">{card.eyebrow}</span>
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-black/45 dark:text-muted">{card.eyebrow}</span>
                 <ArrowUpRight
-                  className="h-5 w-5 text-ink/30 group-hover:text-primary group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all"
+                  className="h-5 w-5 text-black/25 dark:text-ink/30 group-hover:text-primary group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all"
                   strokeWidth={1.8}
                 />
               </div>
@@ -652,9 +923,9 @@ function Features() {
               <card.Component />
 
               <div className="mt-6">
-                <h3 className="font-display font-bold text-2xl text-ink leading-tight">{card.heading}</h3>
+                <h3 className="font-display font-bold text-2xl text-black dark:text-ink leading-tight">{card.heading}</h3>
                 <p className="font-serif italic text-primary-dark text-sm mt-1">{card.sub}</p>
-                <p className="text-muted text-[15px] mt-4 leading-relaxed">{card.text}</p>
+                <p className="text-black/55 dark:text-muted text-[15px] mt-4 leading-relaxed">{card.text}</p>
               </div>
             </article>
           ))}
@@ -753,8 +1024,9 @@ function Pillars() {
   ]
 
   return (
-    <section id="results" ref={ref} className="relative py-28 sm:py-40 px-6 sm:px-10 lg:px-16 overflow-hidden">
-      <div className="absolute inset-0 grid-bg opacity-60" />
+    <section id="results" ref={ref} className="relative bg-white dark:bg-background py-28 sm:py-40 px-6 sm:px-10 lg:px-16 overflow-hidden">
+      <div className="absolute inset-0 grid-bg-light dark:hidden opacity-60" />
+      <div className="absolute inset-0 grid-bg-dark hidden dark:block opacity-60" />
       <div className="absolute -top-32 left-1/2 -translate-x-1/2 h-64 w-[44rem] rounded-full bg-primary/10 blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-primary-light/10 blur-3xl pointer-events-none" />
 
@@ -768,34 +1040,34 @@ function Pillars() {
             <span className="inline-block font-mono text-xs uppercase tracking-[0.3em] text-primary-dark mb-5">
               ╱ Results
             </span>
-            <h2 className="font-display font-extrabold text-4xl sm:text-5xl md:text-6xl text-ink leading-[1.05] tracking-tight">
+            <h2 className="font-display font-extrabold text-4xl sm:text-5xl md:text-6xl text-black dark:text-ink leading-[1.05] tracking-tight">
               The numbers
               <span className="block font-serif italic font-medium text-primary-dark">behind the pitch.</span>
             </h2>
           </div>
-          <p className="text-muted text-lg leading-relaxed max-w-md lg:text-right">
+          <p className="text-black/55 dark:text-muted text-lg leading-relaxed max-w-md lg:text-right">
             Three figures that define how we work. Not marketing — just what we deliver every time.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-divider rounded-5xl overflow-hidden border border-divider shadow-xl shadow-primary/5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-black/10 dark:bg-divider rounded-5xl overflow-hidden border border-black/10 dark:border-divider shadow-xl shadow-primary/5">
           {pillars.map((p, i) => (
             <article
               key={i}
               style={{ transitionDelay: visible ? `${i * 150}ms` : '0ms' }}
-              className={`pillar-card relative bg-surface p-9 sm:p-12 group overflow-hidden transition-all duration-1000 ease-out ${
+              className={`pillar-card relative bg-white dark:bg-surface p-9 sm:p-12 group overflow-hidden transition-all duration-1000 ease-out ${
                 visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
               }`}
             >
               <div className="flex items-center justify-between mb-10">
-                <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted">
+                <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-black/45 dark:text-muted">
                   {p.n} / {p.title}
                 </span>
                 <span className="h-1.5 w-1.5 rounded-full bg-primary/40 group-hover:bg-primary group-hover:scale-150 transition-all duration-500" />
               </div>
 
               <div className="flex items-end gap-1 leading-none">
-                <span className="font-display font-extrabold text-[6rem] sm:text-[8rem] md:text-[9rem] leading-[0.85] text-ink tabular-nums tracking-tight">
+                <span className="font-display font-extrabold text-[6rem] sm:text-[8rem] md:text-[9rem] leading-[0.85] text-black dark:text-ink tabular-nums tracking-tight">
                   <CountUp target={p.target} duration={1800 + i * 200} />
                 </span>
                 <span className="font-serif italic font-medium text-4xl sm:text-5xl md:text-6xl text-primary-dark mb-3 sm:mb-4">
@@ -804,9 +1076,9 @@ function Pillars() {
               </div>
 
               <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-primary-dark mt-5">{p.label}</p>
-              <p className="text-muted text-[15px] mt-6 leading-relaxed max-w-xs">{p.desc}</p>
+              <p className="text-black/55 dark:text-muted text-[15px] mt-6 leading-relaxed max-w-xs">{p.desc}</p>
 
-              <div className="absolute bottom-0 left-9 right-9 sm:left-12 sm:right-12 h-px bg-divider overflow-hidden">
+              <div className="absolute bottom-0 left-9 right-9 sm:left-12 sm:right-12 h-px bg-black/10 dark:bg-divider overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-transparent via-primary to-transparent"
                   style={{ animation: `pillar-sweep 4s ease-in-out ${i * 0.4}s infinite` }}
@@ -892,10 +1164,10 @@ function Protocol() {
   ]
 
   return (
-    <section id="process" ref={containerRef} className="relative px-4 sm:px-6 py-20">
+    <section id="process" ref={containerRef} className="relative bg-white dark:bg-background px-4 sm:px-6 py-20">
       <div className="max-w-7xl mx-auto mb-16 px-2 sm:px-10">
         <span className="font-mono text-xs uppercase tracking-[0.25em] text-primary-dark">╱ How we work</span>
-        <h2 className="font-display font-extrabold text-4xl sm:text-5xl md:text-6xl text-ink mt-4 leading-[1.05] tracking-tight max-w-3xl">
+        <h2 className="font-display font-extrabold text-4xl sm:text-5xl md:text-6xl text-black dark:text-ink mt-4 leading-[1.05] tracking-tight max-w-3xl">
           Three steps.
           <span className="block font-serif italic font-medium text-primary-dark">No surprises.</span>
         </h2>
@@ -905,34 +1177,34 @@ function Protocol() {
         {steps.map((step, idx) => (
           <article
             key={idx}
-            className="protocol-card sticky top-24 sm:top-28 mx-auto max-w-6xl bg-gradient-to-br from-surface to-background border border-divider rounded-6xl overflow-hidden shadow-2xl shadow-primary/5"
+            className="protocol-card sticky top-24 sm:top-28 mx-auto max-w-6xl bg-gradient-to-br from-white to-[#F5F6F8] dark:from-surface dark:to-background border border-black/10 dark:border-divider rounded-6xl overflow-hidden shadow-2xl shadow-primary/5"
           >
             <div className="grid lg:grid-cols-5 gap-0 min-h-[60vh] lg:min-h-[70vh]">
               <div className="lg:col-span-3 p-8 sm:p-12 lg:p-16 flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs uppercase tracking-[0.25em] text-muted">{step.meta}</span>
+                  <span className="font-mono text-xs uppercase tracking-[0.25em] text-black/45 dark:text-muted">{step.meta}</span>
                   <span className="font-mono text-[10px] uppercase tracking-widest text-primary-dark bg-primary/10 px-2.5 py-1 rounded-full">
                     VOROQ Protocol
                   </span>
                 </div>
 
                 <div className="my-12">
-                  <span className="font-display font-extrabold text-[7rem] sm:text-[10rem] leading-none text-primary/15 -mb-4 block">
+                  <span className="font-display font-extrabold text-[7rem] sm:text-[10rem] leading-none text-primary/20 -mb-4 block">
                     {step.num}
                   </span>
-                  <h3 className="font-display font-bold text-4xl sm:text-5xl md:text-6xl text-ink leading-[1.02] tracking-tight">
+                  <h3 className="font-display font-bold text-4xl sm:text-5xl md:text-6xl text-black dark:text-ink leading-[1.02] tracking-tight">
                     {step.title}
                   </h3>
                   <p className="font-serif italic text-primary-dark text-2xl sm:text-3xl mt-3">{step.tagline}</p>
                 </div>
 
-                <p className="text-muted text-base sm:text-lg leading-relaxed max-w-lg">{step.text}</p>
+                <p className="text-black/55 dark:text-muted text-base sm:text-lg leading-relaxed max-w-lg">{step.text}</p>
               </div>
 
               <div className="lg:col-span-2 relative overflow-hidden min-h-[300px] lg:min-h-full bg-deep">
                 <img src={step.image} alt={step.alt} loading="lazy" className="absolute inset-0 w-full h-full object-cover grayscale contrast-110" />
                 <div className="absolute inset-0 bg-gradient-to-t from-deep/60 via-transparent to-deep/15" />
-                <div className="absolute top-5 left-5 flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-full pl-3 pr-4 py-1.5 shadow-lg">
+                <div className="absolute top-5 left-5 flex items-center gap-2 bg-background/85 backdrop-blur-sm rounded-full pl-3 pr-4 py-1.5 shadow-lg border border-white/10">
                   <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                   <span className="font-mono text-[10px] uppercase tracking-widest text-ink">Step {step.num}</span>
                 </div>
@@ -968,41 +1240,42 @@ function ServicesGrid() {
   }, [])
 
   return (
-    <section ref={ref} className="relative py-24 px-6 sm:px-10 lg:px-16 bg-deep text-white overflow-hidden rounded-t-6xl">
-      <div className="absolute inset-0 grid-bg-dark opacity-40" />
-      <div className="absolute -top-20 -right-20 h-96 w-96 rounded-full bg-white/[0.04] blur-3xl" />
-      <div className="absolute bottom-0 -left-20 h-72 w-72 rounded-full bg-white/[0.03] blur-3xl" />
+    <section ref={ref} className="relative py-24 px-6 sm:px-10 lg:px-16 bg-white dark:bg-background text-black dark:text-ink overflow-hidden">
+      <div className="absolute inset-0 grid-bg-light dark:hidden opacity-40" />
+      <div className="absolute inset-0 grid-bg-dark hidden dark:block opacity-40" />
+      <div className="absolute -top-20 -right-20 h-96 w-96 rounded-full bg-black/[0.03] dark:bg-white/[0.03] blur-3xl" />
+      <div className="absolute bottom-0 -left-20 h-72 w-72 rounded-full bg-black/[0.025] dark:bg-white/[0.025] blur-3xl" />
 
       <div className="relative max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6 mb-14">
           <div>
-            <span className="font-mono text-xs uppercase tracking-[0.25em] text-white/50">╱ Everything you need</span>
+            <span className="font-mono text-xs uppercase tracking-[0.25em] text-black/50 dark:text-muted">╱ Everything you need</span>
             <h2 className="font-display font-extrabold text-4xl sm:text-5xl md:text-6xl mt-4 leading-[1.05] tracking-tight">
               One partner,
-              <span className="block font-serif italic font-medium text-white">every page.</span>
+              <span className="block font-serif italic font-medium text-black dark:text-ink">every page.</span>
             </h2>
           </div>
-          <p className="text-white/60 max-w-md text-base leading-relaxed">
+          <p className="text-black/60 dark:text-muted max-w-md text-base leading-relaxed">
             We handle the full site build — from first wireframe to launch day — so you're not
             stitching together five different vendors.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-white/10 rounded-4xl overflow-hidden">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-black/10 dark:bg-divider rounded-4xl overflow-hidden">
           {SERVICES_FULL.map((svc, i) => {
             const Icon = svc.icon
             return (
-              <div key={i} className="svc-tile group bg-deep p-7 sm:p-9 hover:bg-white/[0.02] transition-colors duration-500 relative">
+              <div key={i} className="svc-tile group bg-white dark:bg-surface p-7 sm:p-9 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors duration-500 relative">
                 <div className="flex items-start justify-between mb-6">
-                  <div className="h-12 w-12 rounded-2xl bg-white/5 border border-white/15 flex items-center justify-center group-hover:bg-white group-hover:scale-110 transition-all duration-500">
-                    <Icon className="h-5 w-5 text-white/70 group-hover:text-deep" strokeWidth={2} />
+                  <div className="h-12 w-12 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-divider flex items-center justify-center group-hover:bg-black dark:group-hover:bg-white group-hover:scale-110 transition-all duration-500">
+                    <Icon className="h-5 w-5 text-black/60 dark:text-ink/60 group-hover:text-white dark:group-hover:text-black" strokeWidth={2} />
                   </div>
-                  <span className="font-mono text-[10px] text-white/30 uppercase tracking-widest">
+                  <span className="font-mono text-[10px] text-black/30 dark:text-muted uppercase tracking-widest">
                     {String(i + 1).padStart(2, '0')}
                   </span>
                 </div>
                 <h3 className="font-display font-bold text-xl sm:text-2xl mb-3">{svc.title}</h3>
-                <p className="text-white/55 text-sm leading-relaxed">{svc.text}</p>
+                <p className="text-black/55 dark:text-muted text-sm leading-relaxed">{svc.text}</p>
               </div>
             )
           })}
@@ -1054,11 +1327,11 @@ function TrustSignals() {
   ]
 
   return (
-    <section ref={ref} className="relative py-14 sm:py-20 px-6">
+    <section ref={ref} className="relative bg-white dark:bg-background py-14 sm:py-20 px-6">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8">
           <span className="font-mono text-xs uppercase tracking-[0.25em] text-primary-dark">╱ Why teams trust us</span>
-          <h2 className="font-display font-extrabold text-3xl sm:text-4xl md:text-5xl text-ink mt-3 tracking-tight">
+          <h2 className="font-display font-extrabold text-3xl sm:text-4xl md:text-5xl text-black dark:text-ink mt-3 tracking-tight">
             More than an agency.
           </h2>
         </div>
@@ -1068,13 +1341,13 @@ function TrustSignals() {
             <div
               key={i}
               style={{ transitionDelay: visible ? `${i * 120}ms` : '0ms' }}
-              className={`bg-white border border-divider rounded-4xl p-6 hover:border-primary/40 transition-all duration-700 ease-out shadow-sm ${
+              className={`bg-white dark:bg-surface border border-black/10 dark:border-divider rounded-4xl p-6 hover:border-primary/40 transition-all duration-700 ease-out shadow-sm ${
                 visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
               }`}
             >
               <Icon className="h-6 w-6 text-primary mb-3" strokeWidth={1.8} />
-              <h3 className="font-display font-bold text-lg text-ink mb-1.5">{title}</h3>
-              <p className="text-muted text-sm leading-relaxed">{text}</p>
+              <h3 className="font-display font-bold text-lg text-black dark:text-ink mb-1.5">{title}</h3>
+              <p className="text-black/55 dark:text-muted text-sm leading-relaxed">{text}</p>
             </div>
           ))}
         </div>
@@ -1111,38 +1384,28 @@ function ContactForm() {
   }
 
   return (
-    <section id="contact" className="relative py-24 sm:py-32 px-6 sm:px-10 lg:px-16 bg-background">
+    <section id="contact" className="relative py-24 sm:py-32 px-6 sm:px-10 lg:px-16 bg-white dark:bg-background">
       <div className="max-w-7xl mx-auto">
         <div className="grid lg:grid-cols-12 gap-10 lg:gap-16">
           <div className="lg:col-span-5">
             <span className="font-mono text-xs uppercase tracking-[0.25em] text-primary-dark">╱ Contact</span>
-            <h2 className="font-display font-extrabold text-4xl sm:text-5xl md:text-6xl text-ink mt-4 leading-[1.05] tracking-tight">
+            <h2 className="font-display font-extrabold text-4xl sm:text-5xl md:text-6xl text-black dark:text-ink mt-4 leading-[1.05] tracking-tight">
               Ready to
               <span className="block font-serif italic font-medium text-primary-dark">build?</span>
             </h2>
-            <p className="text-muted text-lg mt-6 leading-relaxed max-w-md">
+            <p className="text-black/55 dark:text-muted text-lg mt-6 leading-relaxed max-w-md">
               Tell us about your business and what kind of website or landing page you need. We'll
               get back to you within one business day.
             </p>
 
             <div className="mt-10 space-y-4">
-              <a href="tel:+15550100192" className="lift-on-hover flex items-center gap-4 group">
-                <span className="h-12 w-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:bg-primary transition">
-                  <Phone className="h-5 w-5 text-primary group-hover:text-white" />
-                </span>
-                <span>
-                  <span className="block font-mono text-[10px] uppercase tracking-widest text-muted">Call direct</span>
-                  <span className="font-display font-semibold text-ink text-lg">+1 (555) 010-0192</span>
-                </span>
-              </a>
-
               <a href="mailto:VOROQ@voroq.co.uk" className="lift-on-hover flex items-center gap-4 group">
                 <span className="h-12 w-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:bg-primary transition">
                   <Mail className="h-5 w-5 text-primary group-hover:text-white" />
                 </span>
                 <span>
-                  <span className="block font-mono text-[10px] uppercase tracking-widest text-muted">Email us</span>
-                  <span className="font-display font-semibold text-ink text-lg">VOROQ@voroq.co.uk</span>
+                  <span className="block font-mono text-[10px] uppercase tracking-widest text-black/45 dark:text-muted">Email us</span>
+                  <span className="font-display font-semibold text-black dark:text-ink text-lg">VOROQ@voroq.co.uk</span>
                 </span>
               </a>
 
@@ -1151,15 +1414,15 @@ function ContactForm() {
                   <MapPin className="h-5 w-5 text-primary" />
                 </span>
                 <span>
-                  <span className="block font-mono text-[10px] uppercase tracking-widest text-muted">Coverage</span>
-                  <span className="font-display font-semibold text-ink text-lg">Remote — Worldwide</span>
+                  <span className="block font-mono text-[10px] uppercase tracking-widest text-black/45 dark:text-muted">Coverage</span>
+                  <span className="font-display font-semibold text-black dark:text-ink text-lg">Remote — Worldwide</span>
                 </span>
               </div>
             </div>
 
             <div className="mt-10 p-5 rounded-3xl bg-primary/5 border border-primary/15">
               <p className="font-mono text-[10px] uppercase tracking-widest text-primary-dark mb-2">Data security</p>
-              <p className="text-sm text-muted leading-relaxed">
+              <p className="text-sm text-black/55 dark:text-muted leading-relaxed">
                 Your information stays with us. We only reach out about your enquiry and never
                 sell data to third parties.
               </p>
@@ -1167,7 +1430,7 @@ function ContactForm() {
           </div>
 
           <div className="lg:col-span-7">
-            <form onSubmit={handleSubmit} className="bg-surface border border-divider rounded-5xl p-7 sm:p-10 shadow-xl shadow-primary/5">
+            <form onSubmit={handleSubmit} className="bg-[#F6F7F9] dark:bg-surface border border-black/10 dark:border-divider rounded-5xl p-7 sm:p-10 shadow-xl shadow-primary/5">
               {status !== 'sent' ? (
                 <>
                   <div className="grid sm:grid-cols-2 gap-5">
@@ -1178,14 +1441,14 @@ function ContactForm() {
                   </div>
 
                   <div className="mt-5">
-                    <label className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted mb-2 block">Your message *</label>
+                    <label className="font-mono text-[10px] uppercase tracking-[0.2em] text-black/50 dark:text-muted mb-2 block">Your message *</label>
                     <textarea
                       value={form.message}
                       onChange={(e) => setForm({ ...form, message: e.target.value })}
                       required
                       rows={5}
                       placeholder="Tell us briefly about your project or goal..."
-                      className="w-full bg-background border border-divider rounded-2xl px-4 py-3.5 text-ink placeholder-muted/60 focus:border-primary focus:ring-4 focus:ring-primary/15 outline-none transition resize-none font-body"
+                      className="w-full bg-white dark:bg-background border border-black/10 dark:border-divider rounded-2xl px-4 py-3.5 text-black dark:text-ink placeholder-black/35 dark:placeholder-muted focus:border-primary focus:ring-4 focus:ring-primary/15 outline-none transition resize-none font-body"
                     />
                   </div>
 
@@ -1203,13 +1466,13 @@ function ContactForm() {
                       dropRef.current?.classList.remove('!border-primary', '!bg-primary/5')
                       handleFiles(e.dataTransfer.files)
                     }}
-                    className="mt-5 border-2 border-dashed border-divider rounded-3xl p-6 text-center hover:border-primary/50 transition-colors cursor-pointer"
+                    className="mt-5 border-2 border-dashed border-black/15 dark:border-divider rounded-3xl p-6 text-center hover:border-primary/50 transition-colors cursor-pointer"
                   >
                     <input type="file" multiple id="file-up" className="hidden" onChange={(e) => handleFiles(e.target.files)} accept="image/*" />
                     <label htmlFor="file-up" className="cursor-pointer block">
                       <Upload className="h-6 w-6 mx-auto text-primary-dark mb-2" />
-                      <p className="font-display font-semibold text-ink text-sm">Attach files (brand assets, brief, etc.)</p>
-                      <p className="text-xs text-muted mt-1">Click or drag files here (max 5 files)</p>
+                      <p className="font-display font-semibold text-black dark:text-ink text-sm">Attach files (brand assets, brief, etc.)</p>
+                      <p className="text-xs text-black/50 dark:text-muted mt-1">Click or drag files here (max 5 files)</p>
                       {files.length > 0 && (
                         <div className="mt-4 flex flex-wrap gap-2 justify-center">
                           {files.map((f, i) => (
@@ -1224,7 +1487,7 @@ function ContactForm() {
                   </div>
 
                   <div className="mt-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <p className="text-xs text-muted">We reply within one business day. Fields marked * are required.</p>
+                    <p className="text-xs text-black/50 dark:text-muted">We reply within one business day. Fields marked * are required.</p>
                     <button
                       type="submit"
                       disabled={status === 'sending'}
@@ -1240,8 +1503,8 @@ function ContactForm() {
                   <div className="h-16 w-16 mx-auto rounded-full bg-primary/15 flex items-center justify-center mb-6">
                     <CheckCircle2 className="h-8 w-8 text-primary-dark" />
                   </div>
-                  <h3 className="font-display font-bold text-2xl text-ink mb-3">Thanks — we'll be in touch</h3>
-                  <p className="text-muted max-w-md mx-auto">We'll review your project and get back to you within one business day.</p>
+                  <h3 className="font-display font-bold text-2xl text-black dark:text-ink mb-3">Thanks — we'll be in touch</h3>
+                  <p className="text-black/55 dark:text-muted max-w-md mx-auto">We'll review your project and get back to you within one business day.</p>
                 </div>
               )}
             </form>
@@ -1255,7 +1518,7 @@ function ContactForm() {
 function Field({ label, type = 'text', required, value, onChange }) {
   return (
     <div>
-      <label className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted mb-2 block">
+      <label className="font-mono text-[10px] uppercase tracking-[0.2em] text-black/50 dark:text-muted mb-2 block">
         {label} {required && '*'}
       </label>
       <input
@@ -1263,7 +1526,7 @@ function Field({ label, type = 'text', required, value, onChange }) {
         required={required}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full bg-background border border-divider rounded-2xl px-4 py-3.5 text-ink placeholder-muted/60 focus:border-primary focus:ring-4 focus:ring-primary/15 outline-none transition font-body"
+        className="w-full bg-white dark:bg-background border border-black/10 dark:border-divider rounded-2xl px-4 py-3.5 text-black dark:text-ink placeholder-black/35 dark:placeholder-muted focus:border-primary focus:ring-4 focus:ring-primary/15 outline-none transition font-body"
       />
     </div>
   )
@@ -1274,18 +1537,19 @@ function Field({ label, type = 'text', required, value, onChange }) {
 ---------------------------------------------------------------- */
 function Footer() {
   return (
-    <footer className="relative bg-deep text-white rounded-t-6xl mt-12 overflow-hidden">
-      <div className="absolute inset-0 grid-bg-dark opacity-30" />
-      <div className="absolute -top-32 left-1/2 -translate-x-1/2 h-64 w-[40rem] rounded-full bg-white/[0.04] blur-3xl" />
+    <footer className="relative bg-white dark:bg-background text-black dark:text-ink overflow-hidden">
+      <div className="absolute inset-0 grid-bg-light dark:hidden opacity-30" />
+      <div className="absolute inset-0 grid-bg-dark hidden dark:block opacity-30" />
+      <div className="absolute -top-32 left-1/2 -translate-x-1/2 h-64 w-[40rem] rounded-full bg-black/[0.03] dark:bg-white/[0.03] blur-3xl" />
 
       <div className="relative px-6 sm:px-10 lg:px-16 pt-20 pb-10 max-w-7xl mx-auto">
-        <div className="border-b border-white/10 pb-12 mb-12">
+        <div className="border-b border-black/10 dark:border-divider pb-12 mb-12">
           <h2 className="font-display font-extrabold text-5xl sm:text-7xl md:text-8xl leading-[0.92] tracking-tight">
             Websites, built
-            <span className="font-serif italic font-medium text-white block">to convert.</span>
+            <span className="font-serif italic font-medium text-primary-dark block">to convert.</span>
           </h2>
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mt-8 gap-6">
-            <p className="text-white/50 max-w-md">
+            <p className="text-black dark:text-ink max-w-md">
               VOROQ — websites and landing pages for businesses ready to grow.
             </p>
             <a href="#contact" className="magnetic-btn inline-flex items-center gap-2 bg-primary text-white font-semibold px-7 py-3.5 rounded-full self-start sm:self-auto">
@@ -1300,20 +1564,19 @@ function Footer() {
             <img
               src="/logo-black.svg"
               alt="VOROQ"
-              className="h-32 sm:h-40 w-auto -mt-[37px] sm:-mt-[46px] -ml-[112px] sm:-ml-[140px] mb-5"
-              style={{ filter: 'brightness(0) invert(1)' }}
+              className="h-32 sm:h-40 w-auto -mt-[37px] sm:-mt-[46px] -ml-[112px] sm:-ml-[140px] mb-5 dark:invert"
             />
-            <p className="text-white/50 text-sm leading-relaxed max-w-xs">
+            <p className="text-black dark:text-ink text-sm leading-relaxed max-w-xs">
               A studio building fast, modern websites and landing pages for growing businesses.
             </p>
           </div>
 
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/45 mb-4">Services</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-black dark:text-ink mb-4">Services</p>
             <ul className="space-y-2.5">
               {SERVICES_FULL.slice(0, 4).map((s, i) => (
                 <li key={i}>
-                  <a href="#services" className="text-white/65 hover:text-white transition text-sm">
+                  <a href="#services" className="text-black dark:text-ink hover:text-primary transition text-sm">
                     {s.title}
                   </a>
                 </li>
@@ -1322,37 +1585,32 @@ function Footer() {
           </div>
 
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/45 mb-4">Contact</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-black dark:text-ink mb-4">Contact</p>
             <ul className="space-y-2.5">
               <li>
-                <a href="tel:+15550100192" className="text-white/65 hover:text-white transition text-sm">
-                  +1 (555) 010-0192
-                </a>
-              </li>
-              <li>
-                <a href="mailto:VOROQ@voroq.co.uk" className="text-white/65 hover:text-white transition text-sm">
+                <a href="mailto:VOROQ@voroq.co.uk" className="text-black dark:text-ink hover:text-primary transition text-sm">
                   VOROQ@voroq.co.uk
                 </a>
               </li>
-              <li className="text-white/65 text-sm">Remote, Worldwide</li>
+              <li className="text-black dark:text-ink text-sm">Remote, Worldwide</li>
             </ul>
           </div>
         </div>
 
-        <div className="mt-14 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+        <div className="mt-14 pt-8 border-t border-black/10 dark:border-divider flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="flex items-center gap-2.5">
             <span className="relative flex h-2 w-2">
-              <span className="absolute inset-0 rounded-full bg-white animate-ping" />
-              <span className="relative h-2 w-2 rounded-full bg-white" />
+              <span className="absolute inset-0 rounded-full bg-primary animate-ping" />
+              <span className="relative h-2 w-2 rounded-full bg-primary" />
             </span>
-            <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-white/60">
+            <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-black/60 dark:text-muted">
               Accepting new clients
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-white/50 text-xs font-mono">
-            <Link to="/privacy" className="hover:text-white transition">Privacy Policy</Link>
-            <Link to="/terms" className="hover:text-white transition">Terms</Link>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-black/50 dark:text-muted text-xs font-mono">
+            <Link to="/privacy" className="hover:text-primary transition">Privacy Policy</Link>
+            <Link to="/terms" className="hover:text-primary transition">Terms</Link>
             <span>© 2026 VOROQ</span>
           </div>
         </div>
@@ -1376,6 +1634,7 @@ export default function App() {
 
   return (
     <div className="relative">
+      <CustomCursor />
       <div className="noise-overlay" />
       <Navbar />
       <main>
